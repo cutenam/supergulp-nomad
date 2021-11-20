@@ -2,7 +2,7 @@ import gulp from "gulp";  // es6문법, babel 을 이용하여 컴파일해줘�
 import pug from "gulp-pug"; // pug 파일을 html로 트랜스파일링 해줌, 모듈을 설치해줘야 한다, pug
 import del from "del"; // build 파일을 삭제 해줌(지정된 경로...)
 import webserver from "gulp-webserver";  // 웹서버 구동, 옵션 지정에 따라 브라우저 기동, 또는 수정한 내용이 자동 반영됨
-
+import image from "gulp-image";
 
 //task 정의
 /*
@@ -16,9 +16,13 @@ function 을 export 또는 const　하는 방법을 정의 함
 // 경로들을 공통 객체로 정의함
 const routes = {
     pug: {
-        src: "src/*.pug", // 컴파일할 파일, src 바로 아래 모든 pug　파일들, 하위 디렉토리 포함하려면 src/**/*.pug
-        dest: "build",    // 최종 파일들을 생성할 디렉토리명
+        src: "src/*.pug",       // 컴파일할 파일, src 바로 아래 모든 pug　파일들, 하위 디렉토리 포함하려면 src/**/*.pug
+        dest: "build",          // 생성한 파일을 위치시킬 디렉토리, 위치
         watch: "src/**/*.pug"   // 지켜봐야할 파일, src　이하 하위 디렉토리포함하여 pug　파일들의 수정여부를 감시함
+    },
+    img: {
+        src: "src/img/*" ,  // * 디렉토리 이하 모든 파일
+        dest: "build/img"
     }
 }
 
@@ -60,15 +64,31 @@ const gulpServer = () => gulp.src("build")
                                 open: true
                             }))
 
+// 이미지 처리
+// gulp.task('image', function () {
+//     gulp.src('./fixtures/*')
+//         .pipe(image())
+//         .pipe(gulp.dest('./dest'));
+// });
+// 파일 용량이 커지면, 처리 시간이 오래 걸릴 수 있음
+// 파일 트랜스파일링 이전 과정에 넣는 것이 좋을 수 있다.
+const gulpImage = () => gulp.src(routes.img.src)
+                            .pipe(image())
+                            .pipe(gulp.dest(routes.img.dest));
+
 // watch
 // 감시할 경로를 넣어주고, 변경사항이 일어날때 실행할 함수를 넣어줌
 const watch = () => {
     // pug 파일 변경시마다, 감시하여, 컴파일되도록 정의
     gulp.watch(routes.pug.watch, pugTask);
+    // 이미지가 파일 변경시마다, 감시하여, 이미지 최적화 (이미지 용량에 따라 성능에 문제가 생길 수 있기때문에 판단 필요)
+    gulp.watch(routes.img.src, img);
 }
 
-// 이렇게 series　를 별도 만든 이유는 task  그룹을 만든 것임
-const prepare = gulp.series([clean]);
+// 이렇게 series　를 별도 만든 이유는 같은 목적의 task 그룹을 만든 것 같다.
+// const prepare = gulp.series([clean]);
+const prepare = gulp.series([clean, gulpImage]); //　파일 컴파일 이전에 이미지 작업 진행
+
 const assets = gulp.series([pugTask]);
 
 //const postDev = gulp.series([gulpServer]);  // 웹서버만 실행
@@ -80,7 +100,8 @@ const postDev = gulp.parallel([gulpServer, watch]) // 서버실행, 변경파일
 // gulp.series([함수로 정의한 태스크명, 여러개인 경우 콤마(,)로 구분])
 //export const dev = () => gulp.series([pugTask]);  // 에러 발생
 // export const dev = gulp.series([clean, pugTask, gulpServer]);
-export const dev = gulp.series([clean, pugTask, postDev]);
+// export const dev = gulp.series([clean, pugTask, postDev]);
+export const dev = gulp.series([prepare, pugTask, postDev]);
 
 
 
