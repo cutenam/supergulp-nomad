@@ -10,7 +10,12 @@
     "dev": "gulp dev",
     "build": "gulp build"
   },
-  "dependencies": {
-    "gulp": "^4.0.2"
+  "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/preset-env": "^7.16.4",
+    "@babel/register": "^7.16.0",
+    "del": "^6.0.0",
+    "gulp": "^4.0.2",
+    "gulp-pug": "^5.0.0"
   }
 }
