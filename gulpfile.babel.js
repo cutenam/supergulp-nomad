@@ -2,7 +2,13 @@ import gulp from "gulp";  // es6문법, babel 을 이용하여 컴파일해줘�
 import pug from "gulp-pug"; // pug 파일을 html로 트랜스파일링 해줌, 모듈을 설치해줘야 한다, pug
 import del from "del"; // build 파일을 삭제 해줌(지정된 경로...)
 import webserver from "gulp-webserver";  // 웹서버 구동, 옵션 지정에 따라 브라우저 기동, 또는 수정한 내용이 자동 반영됨
-import image from "gulp-image";
+import image from "gulp-image";  // 이미지 최적화
+
+import sass from "gulp-sass";  // sass 컴파일 모듈
+sass.compiler = require("node-sass");  // gulp-sass 4.x　버전의 경우
+
+import autoprefixer from "gulp-autoprefixer";  // 구형 브라우저에게 CSS 호환가능하도록 하는 모듈
+import csso from "gulp-csso";       // css minified 모듈
 
 //task 정의
 /*
@@ -23,6 +29,11 @@ const routes = {
     img: {
         src: "src/img/*" ,  // * 디렉토리 이하 모든 파일
         dest: "build/img"
+    },
+    scss: {
+        src: "src/scss/*.scss",  // 컴파일할 scss 파일, 파일명을 단독으로 명시하는 것은 해당파일만 트랜스파일한다는 의미
+        dest: "build/css",          // 생성할  css 파일
+        watch: "src/scss/**/*.scss"   // 지켜봐야할 파일, scss　이하 하위 디렉토리포함하여 scss　파일들의 수정여부를 감시함
     }
 }
 
@@ -76,20 +87,33 @@ const gulpImage = () => gulp.src(routes.img.src)
                             .pipe(image())
                             .pipe(gulp.dest(routes.img.dest));
 
+// scss 파일 css 파일로 트랜스파일
+const gulpStyles = () => gulp.src(routes.scss.src)
+    .pipe(sass().on("error", sass.logError))  // sass　문법등 에러 발생시, 에러 내용 보여줌
+    .pipe(autoprefixer({
+        browsers:['last 2 versions']    //  각 브라우저 최신기준으로 그 2단계 이전 버전까지 호환가능하도록
+    }))
+    .pipe(csso())   // css minified
+    .pipe(gulp.dest(routes.scss.dest));
+
+
 // watch
 // 감시할 경로를 넣어주고, 변경사항이 일어날때 실행할 함수를 넣어줌
 const watch = () => {
     // pug 파일 변경시마다, 감시하여, 컴파일되도록 정의
     gulp.watch(routes.pug.watch, pugTask);
     // 이미지가 파일 변경시마다, 감시하여, 이미지 최적화 (이미지 용량에 따라 성능에 문제가 생길 수 있기때문에 판단 필요)
-    gulp.watch(routes.img.src, img);
+    gulp.watch(routes.img.src, gulpImage);
+    // scss 파일 변경시마다, 감시하여, css　로 트랜스파일링
+    gulp.watch(routes.scss.watch, gulpStyles);
 }
 
 // 이렇게 series　를 별도 만든 이유는 같은 목적의 task 그룹을 만든 것 같다.
 // const prepare = gulp.series([clean]);
 const prepare = gulp.series([clean, gulpImage]); //　파일 컴파일 이전에 이미지 작업 진행
 
-const assets = gulp.series([pugTask]);
+// const assets = gulp.series([pugTask]);
+const assets = gulp.series([pugTask, gulpStyles]);
 
 //const postDev = gulp.series([gulpServer]);  // 웹서버만 실행
 // const postDev = gulp.series([gulpServer, watch]) // 서버실행 후, 변경파일 감시
@@ -101,7 +125,8 @@ const postDev = gulp.parallel([gulpServer, watch]) // 서버실행, 변경파일
 //export const dev = () => gulp.series([pugTask]);  // 에러 발생
 // export const dev = gulp.series([clean, pugTask, gulpServer]);
 // export const dev = gulp.series([clean, pugTask, postDev]);
-export const dev = gulp.series([prepare, pugTask, postDev]);
+// export const dev = gulp.series([prepare, pugTask, postDev]);
+export const dev = gulp.series([prepare, assets, postDev]);
 
 
 
