@@ -11,7 +11,7 @@ import autoprefixer from "gulp-autoprefixer";  // 구형 브라우저에게 CSS 
 import csso from "gulp-csso";       // css minified 모듈
 import bro from "gulp-bro";
 import babelify from "babelify";
-//import uglifyify from "uglifyify";
+import ghpages from "gulp-gh-pages";
 
 //task 정의
 /*
@@ -66,7 +66,8 @@ const pugTask = () => gulp.src(routes.pug.src)
                         .pipe(gulp.dest(routes.pug.dest));
 
 // del(["삭제할 디렉토리 경로"]
-const clean = () => del(["build/"]);  // "build" 슬래시 유무에 따른 차이가 있나??
+// const clean = () => del(["build/"]);  // "build" 슬래시 유무에 따른 차이가 있나??
+const clean = () => del(["build/", ".publish"]);
 
 // task : gulp webserver
 // gulp.task('webserver', function() {
@@ -105,6 +106,7 @@ const gulpStyles = () => gulp.src(routes.scss.src)
     .pipe(csso())   // css minified
     .pipe(gulp.dest(routes.scss.dest));
 
+// js es6문법을 바벨 이용하여 호환성있는 스크립트로 트랜스파일링
 const gulpJs = () => gulp.src(routes.js.src)
     .pipe(bro({
         transform: [
@@ -117,6 +119,9 @@ const gulpJs = () => gulp.src(routes.js.src)
     }))
     .pipe(gulp.dest(routes.js.dest));
 
+// 깃허브 호스팅 기능 이용하여 페이지 배포
+const gulpDeploy = () => gulp.src("build/**/*")
+                         .pipe(ghpages());
 
 
 // watch
@@ -150,7 +155,19 @@ const postDev = gulp.parallel([gulpServer, watch]) // 서버실행, 변경파일
 // export const dev = gulp.series([clean, pugTask, gulpServer]);
 // export const dev = gulp.series([clean, pugTask, postDev]);
 // export const dev = gulp.series([prepare, pugTask, postDev]);
-export const dev = gulp.series([prepare, assets, postDev]);
+//export const dev = gulp.series([prepare, assets, postDev]);
+
+// 개발소스 빌드
+//export const build = gulp.series([prepare, assets]);
+
+// 빌드파일 배포
+//export const deploy = gulp.series([build, gulpDeploy])
+
+
+export const build = gulp.series([prepare, assets]);
+export const dev = gulp.series([build, postDev]);
+export const deploy = gulp.series([build, gulpDeploy, clean]);
+
 
 
 
