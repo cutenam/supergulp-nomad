@@ -14,14 +14,17 @@
     "@babel/core": "^7.16.0",
     "@babel/preset-env": "^7.16.4",
     "@babel/register": "^7.16.0",
+    "babelify": "^10.0.0",
     "del": "^6.0.0",
     "gulp": "^4.0.2",
     "gulp-autoprefixer": "^8.0.0",
+    "gulp-bro": "^2.0.0",
     "gulp-csso": "^4.0.1",
     "gulp-image": "^6.2.1",
     "gulp-pug": "^5.0.0",
     "gulp-sass": "^4.0.2",
     "gulp-webserver": "^0.9.1",
-    "node-sass": "^6.0.1"
+    "node-sass": "^6.0.1",
+    "uglifyify": "^5.0.2"
   }
 }

@@ -9,6 +9,9 @@ sass.compiler = require("node-sass");  // gulp-sass 4.x　버전의 경우
 
 import autoprefixer from "gulp-autoprefixer";  // 구형 브라우저에게 CSS 호환가능하도록 하는 모듈
 import csso from "gulp-csso";       // css minified 모듈
+import bro from "gulp-bro";
+import babelify from "babelify";
+//import uglifyify from "uglifyify";
 
 //task 정의
 /*
@@ -34,6 +37,12 @@ const routes = {
         src: "src/scss/*.scss",  // 컴파일할 scss 파일, 파일명을 단독으로 명시하는 것은 해당파일만 트랜스파일한다는 의미
         dest: "build/css",          // 생성할  css 파일
         watch: "src/scss/**/*.scss"   // 지켜봐야할 파일, scss　이하 하위 디렉토리포함하여 scss　파일들의 수정여부를 감시함
+    },
+    js:{
+        src: "src/js/main.js",
+        dest: "build/js",
+        watch: "src/js/**/*.js"
+
     }
 }
 
@@ -96,6 +105,19 @@ const gulpStyles = () => gulp.src(routes.scss.src)
     .pipe(csso())   // css minified
     .pipe(gulp.dest(routes.scss.dest));
 
+const gulpJs = () => gulp.src(routes.js.src)
+    .pipe(bro({
+        transform: [
+            babelify.configure({
+                //presets: ["es2015"]
+                presets:["@babel/preset-env"]  // gulpfile 에 설정한 preset 설정, 리액트 관련해서 필요하면 추가하면됨
+            }),
+            ["uglifyify", {global: true}] // uglifyify　도 설치해줘야 함, 임포트는 별도로 안함
+        ]
+    }))
+    .pipe(gulp.dest(routes.js.dest));
+
+
 
 // watch
 // 감시할 경로를 넣어주고, 변경사항이 일어날때 실행할 함수를 넣어줌
@@ -106,6 +128,8 @@ const watch = () => {
     gulp.watch(routes.img.src, gulpImage);
     // scss 파일 변경시마다, 감시하여, css　로 트랜스파일링
     gulp.watch(routes.scss.watch, gulpStyles);
+    // js 파일 변경에 다른 바벨트랜스파일링 부분 감시
+    gulp.watch(routes.js.src, gulpJs);
 }
 
 // 이렇게 series　를 별도 만든 이유는 같은 목적의 task 그룹을 만든 것 같다.
@@ -113,7 +137,7 @@ const watch = () => {
 const prepare = gulp.series([clean, gulpImage]); //　파일 컴파일 이전에 이미지 작업 진행
 
 // const assets = gulp.series([pugTask]);
-const assets = gulp.series([pugTask, gulpStyles]);
+const assets = gulp.series([pugTask, gulpStyles, gulpJs]);
 
 //const postDev = gulp.series([gulpServer]);  // 웹서버만 실행
 // const postDev = gulp.series([gulpServer, watch]) // 서버실행 후, 변경파일 감시
